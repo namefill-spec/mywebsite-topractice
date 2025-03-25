@@ -1,0 +1,454 @@
+<!doctype html>
+<html>
+	<head>
+		<style>
+			#idBody{
+				margin: 30px;
+			}
+			#StatusSite0
+			{
+					max-width: 700px;
+					border:1px solid #ddd; 
+					padding: 20px;
+					margin: 0 auto;
+					border-radius: 10px;
+					box-shadow: 0 0 10px  rgba(0,0,0,0.1);
+				}
+			#styleButtonPlusBlock
+			{
+				display: block;
+				margin: 0 auto;
+				max-width: 80px;
+				height: 60px;
+				background-color: yellow;
+				border-radius: 10px;
+			}
+			#styleButtonClearBlock
+			{
+				display: block;
+				margin: 0 auto;
+				max-width: auto;
+				height: 20px;
+				border-radius: 2px;
+			}
+			input {
+				width: 50%;
+			}
+			.classBlock{
+				position: relative;
+				display: block;
+				width: 50%;
+				margin: 30px auto; 
+				height: 150px ;
+				padding: 10px;
+				border-radius: 10px;
+				
+			}
+			.classBlockDelete{
+				position: absolute;
+				top: 0 ;
+				right: 0; 
+				transform: translate(25%, 50%);
+				cursor: pointer;
+				background-color: red;
+				color: white;
+				border-radius: 5px;
+				padding: 3px 10px;
+				font-size: 13px;
+				z-index: 2;
+			}
+			.renameOption{
+				position: absolute;
+				display: none;
+				top: 0;
+				right: 0;
+				transform: translate(25%, 170%);
+				cursor: pointer;
+				background-color: blue;
+				color: white;
+				border-radius: 5px;
+				padding: 3px 10px;
+				font-size: 17px;
+				z-index: 2;
+			}
+			#overlayRenameOption{
+				display: none; /* Ban đầu ẩn */
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0, 0, 0, 0.5); /* Nền mờ */
+				justify-content: center;
+				align-items: center;
+				z-index: 1;
+			}
+			#overlay {
+				display: none; /* Ban đầu ẩn */
+				position: fixed;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				background-color: rgba(0, 0, 0, 0.5); /* Nền mờ */
+				justify-content: center;
+				align-items: center;
+				z-index: 1;
+			}
+			#popupBlock{
+				background: white;
+				padding: 20px;
+				width: 60%;
+				height: 70%;
+				border-radius: 10px;
+				box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+				text-align: center;
+				overflow: auto;
+			}
+			.termButton{
+				width: 80%;
+				height: 90%;
+				border-radius: 5px;
+			}
+			
+		</style>
+	</head>
+	<body id="idBody"> 
+		<script>
+			function clickIncreaseIndexStatusSite(){
+				let letIndexStatusSite = parseInt(localStorage.getItem("numberOfBlock")) || 0;
+				letIndexStatusSite = letIndexStatusSite + 1;
+				localStorage.setItem("numberOfBlock", String(letIndexStatusSite));
+				addBlock(letIndexStatusSite);	
+				// let listBlockName = Array.from(document.getElementsByClassName("classBlock")).map(block => block.outerHTML);
+				// localStorage.setItem("listBlockName", JSON.stringify(classListBlock));
+			}
+			function submitBlockName(button, input, submit){
+				if (input.value === "") {
+					alert("Please enter block's name");
+					return;
+				}
+				button.innerText = input.value;
+				//pop up 
+				button.onclick = () => onPopupInputVoca(button.value);
+				functionButtonDelete(button);
+				
+				let numberOfBlock = parseInt(localStorage.getItem("numberOfBlock"));
+				let listBlockName = JSON.parse(localStorage.getItem("listBlockName"));
+				let arrayCheckIfEntered = JSON.parse(localStorage.getItem("arrayCheckIfEntered"))
+				listBlockName[button.value] = input.value;
+				localStorage.setItem("listBlockName", JSON.stringify(listBlockName));
+				localStorage.setItem("arrayCheckIfEntered", JSON.stringify(arrayCheckIfEntered));
+			}
+			function deleteBlock(index){
+				let listBlockName = JSON.parse(localStorage.getItem("listBlockName"));
+				let arrayCheckIfEntered = JSON.parse(localStorage.getItem("arrayCheckIfEntered"))
+				let numberOfBlock = localStorage.getItem("numberOfBlock");
+				listBlockName.splice(index,1);
+				arrayCheckIfEntered.splice(index,1);
+				numberOfBlock = numberOfBlock-1;
+				localStorage.setItem("numberOfBlock", numberOfBlock);
+				localStorage.setItem("listBlockName", JSON.stringify(listBlockName));
+				localStorage.setItem("arrayCheckIfEntered", JSON.stringify(arrayCheckIfEntered));
+				location.reload();
+			}
+			function functionButtonDelete(button, index)
+			{
+				//create delete button ( hidden)
+				let buttonDelete = document.createElement("button");
+				buttonDelete.classList.add("classBlockDelete");
+				buttonDelete.textContent = "x"; 
+				buttonDelete.style.display = "none";
+				//Show buttonDelete on hover
+				button.addEventListener("mouseover", function(){
+					buttonDelete.style.display = "inline-block";
+				});
+				//Hidden buttonDelete when not hovering
+				button.addEventListener("mouseout", function(){
+					buttonDelete.style.display = "none";
+				});
+				//Onlick
+				buttonDelete.onclick= () => deleteBlock(index);
+				button.appendChild(buttonDelete);
+			}
+			// rename block
+			function renameBlock(index){
+				document.getElementById("overlayRenameOption").style.display ="flex";
+			}
+			function functionRenameBlock(button, index){
+				let buttonRename = document.createElement("button");
+				buttonRename.innerHTML = "<b>...</b>";
+				buttonRename.classList.add("renameOption");
+				button.addEventListener('click', function(event){
+					event.stopPropagation();
+					renameBlock(index)
+				})
+				//Show rename button  on hover
+				button.addEventListener("mouseover", function(){
+					buttonRename.style.display = "inline-block";
+				});
+				//Hidden rename button  when not hovering
+				button.addEventListener("mouseout", function(){
+					buttonRename.style.display = "none";
+				});
+				button.appendChild(buttonRename);
+			}
+			function onPopupInputVoca(index){
+				document.getElementById("overlay").style.display = "flex" ;
+				// check 
+				let arrayCheckIfEntered = JSON.parse(localStorage.getItem("arrayCheckIfEntered"));
+				if (arrayCheckIfEntered[index] === "0"){
+					inputVocabulary(1, index);
+				}
+			}
+			function offPopupInputVoca(){
+				document.getElementById("overlay").style.display = "none";
+				location.reload();
+			}
+			function addBlock(index){
+				//create main button
+				let div = document.getElementById("StatusSite0");
+				let button = document.createElement("button");
+				button.classList.add("classBlock");
+				// Add element in arrayCheckIfEntered
+				let arrayCheckIfEntered = JSON.parse(localStorage.getItem("arrayCheckIfEntered"));
+				arrayCheckIfEntered[index] = "0";
+				localStorage.setItem("arrayCheckIfEntered", JSON.stringify(arrayCheckIfEntered));
+				//assign index
+				button.value = index;
+				//Delete button
+				functionButtonDelete(button, index);
+				//Create input
+				let input = document.createElement("input");
+				input.placeholder="Input block's name";
+				button.appendChild(input);
+				//Create submit
+				let submit = document.createElement("button");
+				submit.innerText="Submit";
+				submit.onclick = () => submitBlockName(button, input, submit);
+				button.appendChild(submit);
+				div.appendChild(button);
+			}
+			function displayBlockWhenRestart(name, index){
+				// 
+				let div = document.getElementById("StatusSite0");
+				let button = document.createElement("button");
+				button.onclick = () => onPopupInputVoca(index);
+				button.classList.add("classBlock");
+				functionButtonDelete(button, index);
+				// renameOption 
+				functionRenameBlock(button, index);
+				
+				let newSpan = document.createElement("h3");
+				newSpan.textContent = name;
+				button.appendChild(newSpan);
+				//popup 
+				
+			
+				div.appendChild(button);
+			}
+			function whenClickSubmit(index){
+				// alert(1);
+				let listOfTermVocabular = Array.from(document.getElementsByClassName("termContent"));
+				let listOfTermVocabulary = listOfTermVocabular.map(input => input.value);
+				
+				let listOfDefinitionVocabular = Array.from(document.getElementsByClassName("definitionContent"));
+				let listOfDefinitionVocabulary = listOfDefinitionVocabular.map(input => input.value);
+				let indexTheEndOfVocabulary = 0;
+				for (let i = 0; i < listOfTermVocabulary.length; i++) {
+					if (listOfTermVocabulary[i] !== "" || listOfDefinitionVocabulary[i] !== "" ) {
+						indexTheEndOfVocabulary = i;
+					}
+				}
+				if ((listOfTermVocabulary[0] === null && listOfTermVocabulary[0] === undefined) || (listOfDefinitionVocabulary[0] === null && listOfDefinitionVocabulary[0] === undefined)) {
+					alert("You must write everything in the blank");
+					return;
+				}
+				for (let i = 0; i <= indexTheEndOfVocabulary; i ++){
+					
+					if (listOfTermVocabulary[i] === "" || listOfDefinitionVocabulary[i] === "") {
+						alert("You must write everything in the blank. at line: " + (i+1));
+						return;
+					}
+				}
+				
+				//localStorage
+				let listTermBlock = JSON.parse(localStorage.getItem("listTermBlock"));
+					listTermBlock[index] = listOfTermVocabulary;
+				localStorage.setItem("listTermBlock", JSON.stringify(listTermBlock));
+				
+				let listDefinitionBlock = JSON.parse(localStorage.getItem("listDefinitionBlock"));
+					listDefinitionBlock[index] = listOfDefinitionVocabulary;
+				localStorage.setItem("listDefinitionBlock", JSON.stringify(listDefinitionBlock));
+				
+				let arrayCheckIfEntered = JSON.parse(localStorage.getItem("arrayCheckIfEntered"));
+				arrayCheckIfEntered[index] = "1";
+				localStorage.setItem("arrayCheckIfEntered", JSON.stringify(arrayCheckIfEntered));
+				
+				location.reload();
+			}
+			function inputVocabulary(index, index1){
+				
+				let div = document.getElementById("popupBlock");
+				for (let i = index; i <= index + 5; i ++) {
+					
+					div.appendChild(document.createElement("br"));
+					// Serial number
+					let onSerialNumber = document.createElement("button");
+					onSerialNumber.style.padding = "10px";
+					onSerialNumber.textContent = i;
+					onSerialNumber.style.marginRight = "89%";
+					onSerialNumber.style.fontSize = "30px";
+					onSerialNumber.style.backgroundColor = "AliceBlue";
+					
+					div.appendChild(onSerialNumber);
+					div.appendChild(document.createElement("br"));
+					
+					// enter term 
+					let inputTerm = document.createElement("input");
+					inputTerm.classList.add("termContent");
+					inputTerm.style.borderRadius = "10px";
+					inputTerm.placeholder = "Enter Term";
+					inputTerm.style.fontSize = "20px";
+					inputTerm.style.width = "90%";
+					inputTerm.style.height = "20%";
+					inputTerm.style.padding = "10px";
+					inputTerm.style.marginBottom = "10px";
+					inputTerm.style.backgroundColor = "AliceBlue";
+					div.appendChild(inputTerm);
+					// div.appendChild(document.createElement("br"));
+					
+					//enter definition
+					let inputDefinition = document.createElement("input");
+					inputDefinition.classList.add("definitionContent");
+					inputDefinition.style.marginLeft = "35%";
+					inputDefinition.style.width = "60%";
+					inputDefinition.style.padding = "10px";
+					inputDefinition.style.height = "15%";
+					inputDefinition.style.fontSize = "20px";
+					inputDefinition.style.borderRadius = "10px";
+					inputDefinition.placeholder = "Enter definition";
+					inputDefinition.style.backgroundColor = "AntiqueWhite";
+					div.appendChild(inputDefinition);
+				}
+				// submitButton
+				let submitButton = document.createElement("button");
+				submitButton.style.padding = "10px";
+				submitButton.textContent = "SUBMIT";
+				submitButton.style.marginTop = "20px";
+				submitButton.style.fontSize = "150%";
+				submitButton.style.marginRight = "25px";
+				submitButton.style.cursor = "pointer";
+				submitButton.style.backgroundColor = "Yellow";
+				submitButton.onclick = () => whenClickSubmit(index1);
+				div.appendChild(submitButton);
+				// more vocabulary
+				let addVocabulary = document.createElement("button");
+				addVocabulary.style.padding = "5px";
+				addVocabulary.textContent = "More";
+				addVocabulary.style.marginTop = "20px";
+				addVocabulary.style.cursor = "pointer";
+				addVocabulary.style.fontSize = "20px";
+				addVocabulary.style.backgroundColor = "YellowGreen";
+				addVocabulary.onclick = function (){
+					addVocabulary.remove();
+					submitButton.remove();
+					inputVocabulary(index+6, index1);
+				}
+				div.appendChild(addVocabulary);
+				
+			}
+			function createBlock(){
+				
+				let div = document.createElement("div");
+				div.id = "StatusSite0";	
+				let buttonPlusBlock = document.createElement("button");
+				buttonPlusBlock.id = "styleButtonPlusBlock";
+				buttonPlusBlock.innerText="Add block";
+				buttonPlusBlock.onclick = function(){
+					clickIncreaseIndexStatusSite();
+				}
+				div.appendChild(buttonPlusBlock);
+				div.appendChild(document.createElement("br"));	
+				 
+				// button clear
+				let buttonClear = document.createElement("button");
+				buttonClear.onclick = () => xoa();
+				buttonClear.textContent = "Clear";
+				div.appendChild(buttonClear);
+				div.appendChild(document.createElement("br"));
+				
+				//popup
+				let divOverlay = document.createElement("div");
+				divOverlay.id = "overlay";
+				let divPopup = document.createElement("div");
+				divPopup.id = "popupBlock";
+				// Button back site
+				let buttonBackSite = document.createElement("button");
+				buttonBackSite.innerHTML = " <h3>\u2190</h3> ";
+				buttonBackSite.onclick = () => offPopupInputVoca();
+				divPopup.appendChild(buttonBackSite);
+				
+				divOverlay.appendChild(divPopup);
+				document.body.appendChild(divOverlay);
+				document.body.appendChild(div);
+			}
+			
+			if (localStorage.getItem("statusSite") === null){
+				localStorage.setItem("statusSite", "0");
+			}
+			if (JSON.parse(localStorage.getItem("listBlockName")) === null){
+				localStorage.setItem("listBlockName", JSON.stringify([]));
+			}
+			if (localStorage.getItem("numberOfBlock") === null){
+				localStorage.setItem("numberOfBlock", "0");
+			 }
+			if (JSON.parse(localStorage.getItem("arrayCheckIfEntered")) === null){
+				localStorage.setItem("arrayCheckIfEntered", JSON.stringify([]));
+			}
+			if (JSON.parse(localStorage.getItem("listTermBlock")) === null){
+				localStorage.setItem("listTermBlock", JSON.stringify([]));
+			}
+			if (JSON.parse(localStorage.getItem("listDefinitionBlock")) === null){
+				localStorage.setItem("listDefinitionBlock", JSON.stringify([]));
+			}
+			function xoa(){
+				localStorage.removeItem("statusSite");
+				localStorage.removeItem("numberOfBlock");
+				localStorage.removeItem("listBlockName"); 
+				localStorage.removeItem("arrayCheckIfEntered"); 
+				localStorage.removeItem("listTermBlock"); 
+				localStorage.removeItem("listDefinitionBlock"); 
+				
+				location.reload();
+			}
+			// xoa();
+			if (localStorage.getItem("statusSite") === "0"){
+				createBlock();	
+				var listBlockName = JSON.parse(localStorage.getItem("listBlockName"));
+				var listVocabularyBlock = JSON.parse(localStorage.getItem("listVocabularyBlock"));
+				var arrayCheckIfEntered = JSON.parse(localStorage.getItem("arrayCheckIfEntered"));
+				if (localStorage.getItem("numberOfBlock") > 0) 
+				{
+					for(let i = 1; i <= parseInt(localStorage.getItem("numberOfBlock")); i++ )
+					{
+						if (listBlockName[i] === undefined || listBlockName[i] === null ) {
+							addBlock(i);
+						}
+						else {
+							displayBlockWhenRestart(listBlockName[i], i);
+						}
+					}
+				}
+			}
+			let array1 = JSON.parse(localStorage.getItem("listTermBlock"));
+			let array2 = JSON.parse(localStorage.getItem("listDefinitionBlock"));
+			for (let i = 1; i <= listBlockName.length; i++) {
+				console.log("term " + i + ": "+ array1[i]);
+				console.log("definition " + i + ": " + array2[i]);
+				
+			}
+			
+		</script>
+	</body>
+</html>
